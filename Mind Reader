@@ -1,0 +1,136 @@
+.data
+list: .word
+keep: .word		#FFFFFF00
+Y: .word 'Y'
+N: .word 'N'
+Prompt: .asciiz "Think about a number between 1 and 63 and answer 'Y' if it appears in the list or N if it doesn't. (Must be upper case)\n"
+Question: .asciiz "\nDid your number appear in the list? ('Y' or 'N'): "
+Space: .asciiz " "
+NL: .asciiz "\n"
+Invalid: .asciiz "\nInvalid input, try again: "
+Result: .asciiz "\nThe number you chose was: "
+remove: .word		#FFFF0000
+
+.text
+start:	li $v0, 4
+	la $a0, Prompt
+	syscall				#Prompt
+	lw $s6, Y			#Yes
+	lw $s7, N			#No
+	li $t8, 0			#Tracks size of remove list
+	li $s2, 0			
+	li $t5, 0			#Tracks number of questions
+	li $t6, 0			#Think of it as a switch for until th first 'Y' input
+	li $a1, 63			#upper limit plus 1 (I put 63 as we'll need to add 1 later)
+	li $s1, 0			#Used to keep track of card size
+	li $t1, 0			#Keeps track of place in print
+	li $t2, 0			#Keeps track of place in check section
+	li $t7, 24			#Used for the New Line section
+card:	li $v0, 42			#Random Integer
+	syscall
+	addi $a0, $a0, 1		#add 1 so 0 doesn't appear
+	li $t2, 0			#Reset before each check
+	bne $s1, 0, check		#this will check for any repeats (2nd placement and above)
+done:	sw $a0, list($s1)
+	addi $s1, $s1, 4		#add 4 each time	Also used in check
+	bne $s1, 96, card		#loop unti 24*4
+	li $t1, 0			#reset before print
+print:	li $v0, 1
+	lw $a0, list($t1)
+	addi $t1, $t1, 4
+	syscall
+	li $v0, 4
+	la $a0, Space			#Create a space between the outputs
+	syscall
+	beq $t1, 96, input		#When done go to user input section
+	beq $t1, $t7, new		#New line every 6 outputs
+	j print				#Loop print
+new:	li $v0, 4
+	la $a0, NL
+	addi $t7, $t7, 24
+	syscall
+	j print
+check:	lw $t1, list($t2)		#Keep an eye on this part when running
+	beq $t1, $a0, card		#Retry if repeat, no other way to make this faster, change later to keep track of 'N'
+	beq $t2, $s1, done
+	addi $t2, $t2, 4
+	j check
+input:	li $v0, 4
+	la $a0, Question
+	syscall
+	addi $t5, $t5, 1		#Increment question number
+	li $v0, 12
+	syscall
+	li $t2, 0			#Use t2 for next steps as well
+	li $t1, 0			#Use t1 as well
+	li $t3, 0
+	li $t4, 0
+	li $s1, 0			#Good place to reset this
+	li $t7, 24
+	move $v1, $v0
+	li $v0, 4
+	la $a0, NL
+	syscall
+	beq $v1, $s6, comp		#Compare (Idea: Set values to zero if they don't repeat and at the end print what isn't zero)
+	beq $v1, $s7, fuse		#If it's not in the list there's nothing to do
+	li $v0, 4
+	la $a0, Invalid
+	syscall
+	j input				#Loop until valid input
+comp:	beq $t6, 0, first		#When the first 'Y' is given that card becomes the base
+	lw $t1, list($t2)		#Idea: Keep track of 'N' as well to check values of both lists for accuracy with less quuestions
+	lw $t3, 0xFFFFFF00($t4)		#List for final answer
+	beq $t1, $t3, match		#If match keep and check next in list
+	addi $t2, $t2, 4		#Check keep against whole list
+	bne $t2, 96, comp		#Loop entire list
+	sw $zero, 0xFFFFFF00($t4)
+match:	addi $t4, $t4, 4		#Next in keep list
+	li $t2, 0			#Reset list
+	bne $t4, 96, comp
+	li $t1, 0
+	li $t2, 0
+	beq $t5, 7, answ		#Go to answer
+	li $t1, 0
+	j clear				#Next card and question
+fuse:	lw $a0, list($s2)
+	sw $a0, 0xFFFF0000($t8)
+	addi $s2, $s2, 4
+	addi $t8, $t8, 4
+	bne $s2, 96, fuse		#Loop until end of list
+	li $s2, 0
+	li $t1, 0
+	li $t2, 0
+	beq $t5, 7, answ		#Go to answer
+	li $t1, 0
+	j clear				#Nest card and question
+first:	lw $a0, list($t1)
+	sw $a0, 0xFFFFFF00($t2)
+	addi $t1, $t1, 4
+	addi $t2, $t2, 4
+	bne $t1, 96, first
+	li $t6, 1			#almost forgot this
+	li $t1, 0
+	j clear
+answ:	lw $a0, 0xFFFFFF00($t1)		#t1 and t2 are set to 0 before hand
+	lw $a1, 0xFFFF0000($t2)		#If it's in both or zero, check next in keep until one is accepted
+	beq $a0, $zero, zero		#Skip ahead
+	beq $a0, $a1, zero		#Same as above
+	beq $t2, $t9, end		#Made it through the whole list without a zero or match
+	addi $t2, $t2, 4
+	j answ
+zero:	addi $t1, $t1, 4
+	li $t2, 0
+	j answ				#Loop afetr increment and reset
+clear:	sw $zero, list($t1)
+	addi $t1, $t1, 4
+	bne $t1, 96, clear
+	j card
+end:	move $a1, $a0
+	li $v0, 4
+	la $a0, Result
+	syscall
+	move $a0, $a1
+	li $v0, 1
+	syscall
+	li $v0, 10
+	syscall
