@@ -1,5 +1,5 @@
 .data
-list: .word
+list: .word		#kept as list
 keep: .word		#FFFFFF00
 Y: .word 'Y'
 N: .word 'N'
@@ -72,7 +72,7 @@ input:	li $v0, 4
 	la $a0, NL
 	syscall
 	beq $v1, $s6, comp		#Compare (Idea: Set values to zero if they don't repeat and at the end print what isn't zero)
-	beq $v1, $s7, fuse		#If it's not in the list there's nothing to do
+	beq $v1, $s7, fuse		#If it's not in the list go to fuse to create alist of what is not the answer to compare at the end
 	li $v0, 4
 	la $a0, Invalid
 	syscall
@@ -89,7 +89,7 @@ match:	addi $t4, $t4, 4		#Next in keep list
 	bne $t4, 96, comp
 	li $t1, 0
 	li $t2, 0
-	beq $t5, 7, answ		#Go to answer
+	beq $t5, 8, answ		#Go to answer
 	li $t1, 0
 	j clear				#Next card and question
 fuse:	lw $a0, list($s2)
@@ -100,9 +100,9 @@ fuse:	lw $a0, list($s2)
 	li $s2, 0
 	li $t1, 0
 	li $t2, 0
-	beq $t5, 7, answ		#Go to answer
+	beq $t5, 8, answ		#Go to answer
 	li $t1, 0
-	j clear				#Nest card and question
+	j clear				#Next card and question
 first:	lw $a0, list($t1)
 	sw $a0, 0xFFFFFF00($t2)
 	addi $t1, $t1, 4
@@ -112,10 +112,10 @@ first:	lw $a0, list($t1)
 	li $t1, 0
 	j clear
 answ:	lw $a0, 0xFFFFFF00($t1)		#t1 and t2 are set to 0 before hand
-	lw $a1, 0xFFFF0000($t2)		#If it's in both or zero, check next in keep until one is accepted
-	beq $a0, $zero, zero		#Skip ahead
-	beq $a0, $a1, zero		#Same as above
-	beq $t2, $t9, end		#Made it through the whole list without a zero or match
+	lw $a1, 0xFFFF0000($t2)		#If it's in both or its value is zero, check next in keep until one is accepted
+	beq $a0, $zero, zero		#Skip ahead if equal to zero
+	beq $a0, $a1, zero		#Skip ahesd if list values match
+	beq $t2, $t8, end		#Made it through the whole list without a zero or match (Accidentally had this as $t9 before)
 	addi $t2, $t2, 4
 	j answ
 zero:	addi $t1, $t1, 4
