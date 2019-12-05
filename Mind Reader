@@ -13,11 +13,11 @@ Repeat: .asciiz "\nWould you like to play again? "
 remove: .word		#FFFF0000
 
 .text
+	lw $s6, Y			#Yes
+	lw $s7, N			#No
 start:	li $v0, 4
 	la $a0, Prompt
 	syscall				#Prompt
-	lw $s6, Y			#Yes
-	lw $s7, N			#No
 	li $t8, 0			#Tracks size of remove list
 	li $s2, 0			
 	li $t5, 0			#Tracks number of questions
