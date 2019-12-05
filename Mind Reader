@@ -133,7 +133,7 @@ end:	move $a1, $a0
 	move $a0, $a1
 	li $v0, 1
 	syscall
-	li $v0, 4
+inv:	li $v0, 4
 	la $a0, Repeat
 	syscall
 	li $v0, 12
@@ -143,5 +143,10 @@ end:	move $a1, $a0
 	la $a0, NL
 	syscall
 	beq $v1, $s6, start
-	li $v0, 10
+	beq $v1, $s7, norep
+	li $v0, 4
+	la $a0, Invalid
+	syscall
+	j inv				#Input checker
+norep:	li $v0, 10
 	syscall
