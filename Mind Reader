@@ -3,13 +3,15 @@ list: .word		#kept as list
 keep: .word		#FFFFFF00
 Y: .word 'Y'
 N: .word 'N'
+Extra: .asciiz	"asofiogbilurhagikunehiuvnaeukvfhushfknusdvhiwvneekf"
+Lines:	.asciiz	"ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
 Prompt: .asciiz "Think about a number between 1 and 63 and answer 'Y' if it appears in the list or N if it doesn't. (Must be upper case)\n"
 Question: .asciiz "\nDid your number appear in the list? ('Y' or 'N'): "
 Space: .asciiz " "
 NL: .asciiz "\n"
-Invalid: .asciiz "\nInvalid input, try again: "
+Invalid: .asciiz "\nInvalid input, try again (Must be 'Y' or 'N'): "
 Result: .asciiz "\nThe number you chose was: "
-Repeat: .asciiz "\nWould you like to play again? "
+Repeat: .asciiz "\nWould you like to play again ('Y' or 'N')? "
 remove: .word		#FFFF0000
 
 .text
